@@ -1,9 +1,9 @@
 import { View, StyleSheet, Image, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { Button, Avatar, Text, Card, IconButton } from 'react-native-paper';
+import { Button, Avatar, Text, Card, IconButton, Menu, Divider } from 'react-native-paper';
 import AddCard from '../../components/AddCard';
 import { useSelector, useDispatch } from 'react-redux'
-import { openModalCategory, closeModalCategory } from '../../redux/categorySlice';
+import DialogDelete from '../../components/DialogDelete';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, updateDoc } from 'firebase/firestore'
 import { FIREBASE_DB } from '../../firebaseConfig';
 
@@ -11,17 +11,25 @@ export interface Card {
   id: string
   description: string
   terminology: string
+  descriptionImage: string
+  terminologyImage: string
 }
 
 export default function ListFlascards({ navigation, route }) {
   const [visibleAddCard, setVisibleAddCard] = useState(false)
   const [collectionId, setCollectionId] = useState("none")
+  const [categoryName, setCategoryName] = useState("none")
+  const [description, setDescription] = useState("none")
+  const [visibleMenu, setVisibleMenu] = useState(false)
+  const [openDialogDelete, setOpenDialogDelete] = useState(false)
   const [cards, setCards] = useState<Card[]>([])
   const [countCards, setCountCards] = useState(0)
   useEffect(() => {
     if (route.params?.collectionId) {
       console.log(route.params?.collectionId)
       setCollectionId(route.params?.collectionId)
+      setCategoryName(route.params?.categoryName)
+      setDescription(route.params?.description)
     }
   }, [route.params?.collectionId]);
   useEffect(() => {
@@ -48,29 +56,53 @@ export default function ListFlascards({ navigation, route }) {
     console.log({ item })
     return (
       <View style={styles.card}>
-        {<Image source={{ uri: "https://tse1.mm.bing.net/th?id=OIP.iMG3CK7nCkVlcLXGG5dqXwHaJ4&pid=Api&rs=1&c=1&qlt=95&w=88&h=117" }} style={{ width: 80, height: 80}} />}
-        <View style={{justifyContent:'center', alignItems:'center', width:300}}>
-          <Text style={styles.cardTitle}>{item.terminology}</Text>
-          <Text style={styles.cardSubtitle}>{item.description}</Text>
+        <View style={{ justifyContent: 'center', width: '100%' }}>
+          <View>
+            {item.terminology && <Text style={styles.cardTitle}>{item.terminology}</Text>}
+            {item.description&&<Text style={styles.cardSubtitle}>{item.description}</Text>}
+          </View>
+          {item.terminologyImage && <Image source={{ uri: item.terminologyImage }} style={{ width: 100, height: 100 }} />}
+          {!item.terminologyImage && item.descriptionImage && <Image source={{ uri: item.descriptionImage }} style={{ width: 200, height: 200 }} />}
         </View>
-        <View style={styles.iconGroup}>
-          <IconButton 
+        <View style={{position:'absolute', top:0, right:0}}>
+          <IconButton
             icon="check-circle-outline"
-            size={30}
-            onPress={()=>console.log()}
+            size={25}
+            onPress={() => console.log()}
           />
-          <IconButton 
-            icon="dots-vertical"
-            size={20}
-            onPress={()=>console.log()}
-          />
+
         </View>
+        <View style={{position:'absolute', bottom:0, right:0}}>
+        <Menu
+              visible={visibleMenu == item.id}
+              onDismiss={() => { setVisibleMenu(false) }}
+              style={{ marginTop: -100 }}
+              anchor={<IconButton
+                icon="dots-vertical"
+                size={25}
+                onPress={() => console.log(setVisibleMenu(item.id))}
+              />}>
+              <Menu.Item leadingIcon="delete" onPress={() => { setOpenDialogDelete(true) ; setVisibleMenu(false) }} title="Xóa" />
+              <Divider />
+              <Menu.Item leadingIcon="pencil" onPress={() => { setVisibleMenu(false)}} title="Chỉnh sửa" />
+            </Menu>
+          
+
+        </View>
+        <DialogDelete
+          title="Xóa thẻ"
+          content="Bạn có chắc chắn muốn xóa thẻ này"
+          id={item.id}
+          collection={`collections/${collectionId}/cards`}
+          openDialogDelete={openDialogDelete}
+          setOpenDialogDelete={setOpenDialogDelete}
+        />
       </View>
     )
   }
   return (
     <View style={styles.containerHome}>
-      <View style={{ alignItems: 'flex-start' }}>
+      <View style={{ alignItems: 'flex-start', marginBottom: 10 }}>
         <Button mode="contained" onPress={() => console.log("btn")}>
           Tất cả: {countCards}
         </Button>
@@ -93,11 +125,14 @@ export default function ListFlascards({ navigation, route }) {
 
       </View>
       <View style={styles.footerHome}>
-        <Button mode="contained" onPress={() => setVisibleAddCard(true)} icon="plus">
-          Thêm thẻ
+        <Button mode="contained" style={{ width: 160 }} onPress={() => navigation.navigate('Practice', { collectionId, cards, categoryName, description })} icon="book">
+          THỰC HÀNH
         </Button>
-        <AddCard visibleAddCard={visibleAddCard} setVisibleAddCard={setVisibleAddCard} collectionId={collectionId} />
+        <Button mode="contained" style={{ width: 160 }} onPress={() => setVisibleAddCard(true)} icon="plus">
+          THÊM THẺ
+        </Button>
       </View>
+      <AddCard visibleAddCard={visibleAddCard} setVisibleAddCard={setVisibleAddCard} collectionId={collectionId} />
 
     </View>
   )
@@ -106,42 +141,47 @@ const styles = StyleSheet.create({
   containerHome: {
     flex: 1,
     backgroundColor: '#e5e5ef',
-    padding: 10,
+    padding: 15,
   },
   footerHome: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'flex-end'
+    height:"100%",
+    justifyContent: 'space-around',
+    flexDirection: 'row',
+    alignItems: 'center'
   },
   bodyHome: {
-    height: 850,
+    height: "83%",
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 15,
   },
   card: {
-    width:'100%',
-    backgroundColor:"#fff",
-    flex:1,
-    flexDirection:'row',
-    justifyContent:'space-between',
-    padding:8,
-    marginVertical:10,
-
+    width: '100%',
+    backgroundColor: "#fff",
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    paddingLeft:10,
+    marginVertical: 7,
+    borderRadius: 10,
+    paddingRight:25,
   },
-  cardTitle:{
-    fontSize:25,
-    fontWeight:"400",
+  cardTitle: {
+    fontSize: 25,
+    fontWeight: "600",
+    lineHeight: 30,
   },
-  cardSubtitle:{
-    marginTop:5,
+  cardSubtitle: {
+    marginBottom: 5,
   },
-  iconGroup:{
-    height:80,
-    alignItems:"center",
-    justifyContent:'center'
+  iconGroup: {
+    height: "100%",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginRight: 5,
   }
-  
+
 
 })

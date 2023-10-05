@@ -51,23 +51,33 @@ const AddCard: React.FC<addCardProps> = (props) => {
             }
         }
     };
+    const saveImage = async (imageUrl: string) => {
+        const response = await fetch(imageUrl)
+        const blob = await response.blob()
+        const filename = imageUrl.substring(imageUrl.lastIndexOf('/') + 1)
+
+        var ref = firebase.storage().ref().child(filename).put(blob)
+        await ref;
+        return await firebase.storage().ref().child(filename).getDownloadURL();
+
+    }
     const handleAddCard = async () => {
         try {
-            // const doc = addDoc(collection(FIREBASE_DB, `collections/${collectionId}/cards`), { terminology, description })
-            const response = await fetch(terminologyImage)
-            const blob = await response.blob()
-            const filename = terminologyImage.substring(terminologyImage.lastIndexOf('/') + 1)
-
-            var ref = firebase.storage().ref().child(filename).put(blob)
-            try {
-                await ref;
-            } catch (e) {
-                console.log(e)
+            if (terminologyImage) {
+                let result = await saveImage(terminologyImage)
+                setTerminologyImage(result)
             }
-            console.log(
-                'Photo uploaded!'
-            );
-
+            if (descriptionImage) {
+                let result = await saveImage(descriptionImage)
+                setDescriptionImage(result)
+            }
+            const doc = addDoc(collection(FIREBASE_DB, `collections/${collectionId}/cards`), { terminology, description, terminologyImage, descriptionImage, isMemorised:false })
+            setTerminology("")
+            setDescription("")
+            setTerminologyImage("")
+            setDescriptionImage("")
+            setIsSwitchTerminologyOn(false)
+            setIsSwitchDescriptionOn(false)
         } catch (error) {
             console.log(error)
         }
@@ -86,7 +96,7 @@ const AddCard: React.FC<addCardProps> = (props) => {
                     </View>
                     <View>
                         <View style={styles.body}>
-                            <TextInput label="Thuật ngữ" value={terminology} onChangeText={setTerminology} mode='outlined' />
+                            <TextInput label="Thuật ngữ" value={terminology} keyboardType="default" onChangeText={text=>setTerminology(text)} mode='outlined' />
                             <View style={{ marginVertical: 5, flexDirection: 'row', alignItems: 'center' }}>
                                 <Text style={{ marginRight: 10 }}>Hình ảnh</Text>
                                 <Switch value={isSwitchTerminologyOn} onValueChange={() => setIsSwitchTerminologyOn(!isSwitchTerminologyOn)} />

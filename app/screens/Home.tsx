@@ -1,6 +1,6 @@
 import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native'
 import React, { useEffect, useState } from 'react'
-import { Button, Avatar, Text, Card, IconButton } from 'react-native-paper';
+import { Button, Avatar, Text, Card, IconButton, Menu, Divider, PaperProvider } from 'react-native-paper';
 import AddCategory from '../../components/AddCategory';
 import { Entypo } from '@expo/vector-icons';
 import AddCollection from '../../components/AddCollection';
@@ -8,7 +8,7 @@ import { useSelector, useDispatch } from 'react-redux'
 import { openModalCategory, closeModalCategory } from '../../redux/categorySlice';
 import { addDoc, collection, deleteDoc, doc, onSnapshot, updateDoc } from 'firebase/firestore'
 import { FIREBASE_DB } from '../../firebaseConfig';
-
+import DialogDelete from '../../components/DialogDelete';
 export interface Collection {
   categoryName: string;
   id: string;
@@ -17,10 +17,19 @@ export interface Collection {
 }
 
 
-const Home = ({navigation}) => {
+const Home = ({ navigation }) => {
   const dispatch = useDispatch()
   const [visibleAddCollection, setVisibleAddCollection] = React.useState(false)
   const [collections, setCollections] = useState<Collection[]>([])
+  const [visibleMenu, setVisibleMenu] = useState(false)
+  const [openDialogDelete, setOpenDialogDelete] = useState(false)
+  const [dataCollectionUpdate, setDataCollectionUpdate] = useState({
+    categoryName: "",
+    id: "",
+    description: "",
+    name: "",
+    isUpdate: false
+  })
   useEffect(() => {
     const collectionsRef = collection(FIREBASE_DB, 'collections')
 
@@ -39,6 +48,26 @@ const Home = ({navigation}) => {
 
     return () => fetchCollection();
   }, [])
+  const handleAddCollection = ( ) =>{
+    setDataCollectionUpdate({
+    categoryName: "",
+    id: "",
+    description: "",
+    name: "",
+    isUpdate: false
+    })
+    setVisibleAddCollection(true)
+  }
+
+  const handleUpdateCollection = (item:any) =>{
+    console.log({item})
+    setDataCollectionUpdate({
+    ...item,
+    isUpdate: true
+    })
+      setVisibleAddCollection(true)
+  }
+
   const renderCardCollection = ({ item }: any) => {
     return (
       <TouchableOpacity>
@@ -46,25 +75,41 @@ const Home = ({navigation}) => {
           <Card.Title
             style={styles.cardTitle}
             titleStyle={{ fontSize: 22 }}
-            subtitleStyle={{fontSize:16}}
+            subtitleStyle={{ fontSize: 16 }}
             subtitle={item.description}
             title={item.name}
-            right={(props) => <IconButton {...props} icon="dots-vertical" onPress={() => { }} />}
+            right={(props) => <Menu
+              visible={visibleMenu == item.id}
+              onDismiss={() => { setVisibleMenu(false) }}
+              style={{ marginTop: 50 }}
+              anchor={<IconButton {...props} icon="dots-vertical" onPress={() => { setVisibleMenu(item.id) }} />}>
+              <Menu.Item leadingIcon="delete" onPress={() => { setOpenDialogDelete(true) ; setVisibleMenu(false) }} title="Xóa" />
+              <Divider />
+              <Menu.Item leadingIcon="pencil" onPress={() => { handleUpdateCollection(item); setVisibleMenu(false)}} title="Chỉnh sửa" />
+            </Menu>}
           />
           <Card.Content>
             <View style={{ alignItems: 'flex-start' }}>
-            <TouchableOpacity style={styles.buttonCategory}>
-              <Text style={{fontSize:13}}>{item.categoryName}</Text>
-            </TouchableOpacity>
+              {item.categoryName !== "nothing" && <TouchableOpacity style={styles.buttonCategory}>
+                <Text style={{ fontSize: 13 }}>{item.categoryName}</Text>
+              </TouchableOpacity>}
             </View>
             <View style={{ flexDirection: 'row', marginTop: 20 }}>
 
-              <Button mode="contained" onPress={()=>navigation.navigate('ListFlashcards',{ collectionId: item.id})} style={{ marginRight: 10 }} icon="plus">Thêm thẻ</Button>
+              <Button mode="contained" onPress={() => navigation.navigate('ListFlashcards', { collectionId: item.id, categoryName: item.categoryName, description: item.description })} style={{ marginRight: 10 }} icon="plus">Thêm thẻ</Button>
               <Button mode="outlined">Thực hành</Button>
             </View>
-            
+
           </Card.Content>
         </Card>
+        <DialogDelete
+          title="Xóa bộ"
+          content="Bạn có chắc chắn muốn xóa bộ này"
+          id={item.id}
+          collection="collections"
+          openDialogDelete={openDialogDelete}
+          setOpenDialogDelete={setOpenDialogDelete}
+        />
       </TouchableOpacity>
     )
   }
@@ -81,10 +126,10 @@ const Home = ({navigation}) => {
           <AddCategory />
         </View>
         <View style={styles.buttonGroup}>
-          <Button mode="outlined" onPress={() => console.log('Pressed')}>
+          <Button mode="outlined" labelStyle={{ fontSize: 13 }} onPress={() => console.log('Pressed')}>
             XEM LẠI TẤT CẢ
           </Button>
-          <Button mode="outlined" onPress={() => console.log('Pressed')}>
+          <Button mode="outlined" labelStyle={{ fontSize: 13 }} onPress={() => console.log('Pressed')}>
             THỰC HÀNH TẤT CẢ
           </Button>
         </View>
@@ -98,21 +143,24 @@ const Home = ({navigation}) => {
               keyExtractor={(collection: Collection) => collection.id}
             />
           </View>
-        ):
-        <View style={{ justifyContent: 'center', alignItems: 'center' }}>
-          <Avatar.Icon size={80} icon="credit-card-edit-outline" />
-          <Text style={{ marginTop: 10, fontSize: 22 }} variant="headlineMedium">Tạo bộ đầu tiên của bạn</Text>
-        </View> 
+        ) :
+          <View style={{ justifyContent: 'center', alignItems: 'center' }}>
+            <Avatar.Icon size={80} icon="credit-card-edit-outline" />
+            <Text style={{ marginTop: 10, fontSize: 22 }} variant="headlineMedium">Tạo bộ đầu tiên của bạn</Text>
+          </View>
         }
 
       </View>
       <View style={styles.footerHome}>
-        <Button mode="contained" onPress={() => setVisibleAddCollection(true)} icon="plus">
+        <Button mode="contained" onPress={handleAddCollection} icon="plus">
           THÊM BỘ
         </Button>
         <AddCollection visibleAddCollection={visibleAddCollection}
-          setVisibleAddCollection={setVisibleAddCollection} />
+          setVisibleAddCollection={setVisibleAddCollection} 
+          dataCollectionUpdate={dataCollectionUpdate}
+          />
       </View>
+
     </View>
   )
 }
@@ -140,6 +188,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 15,
     backgroundColor: "#fff",
+    borderBottomColor: "#rgba(0,0,0,0.2)",
+    borderBottomWidth: 1,
   },
   buttonGroup: {
     flexDirection: 'row',
@@ -147,7 +197,7 @@ const styles = StyleSheet.create({
     marginTop: 15,
   },
   bodyHome: {
-    height: 750,
+    height: "70%",
     width: '100%',
     justifyContent: 'center',
     alignItems: 'center',
@@ -173,11 +223,11 @@ const styles = StyleSheet.create({
   cardContent: {
     marginTop: 0,
   },
-  buttonCategory:{
-    backgroundColor:'rgba(1,1,1,0.1)',
-    paddingHorizontal:10,
-    paddingVertical:6,
-    borderRadius:20
+  buttonCategory: {
+    backgroundColor: 'rgba(1,1,1,0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20
   }
 
 

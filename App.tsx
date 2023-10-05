@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import Home from './app/screens/Home';
 import ListFlascards from './app/screens/ListFlascards';
+import Practice from './app/screens/Practice';
 import { MD3LightTheme as DefaultTheme, PaperProvider, configureFonts } from 'react-native-paper';
 import { Provider } from 'react-redux';
 import store from './redux/store';
@@ -37,6 +38,7 @@ export default function App() {
             component={ListFlascards} 
             options={{title:''}}
              />
+            <Stack.Screen name='Practice' component={Practice} options={{title:''}}/>
           </Stack.Navigator>
         </NavigationContainer>
       </Provider>

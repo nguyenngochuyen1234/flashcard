@@ -5,10 +5,11 @@ import { FIREBASE_DB } from '../firebaseConfig';
 import { openModalCategory, closeModalCategory } from '../redux/categorySlice';
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState } from '../models';
-import React from 'react';
+import React, {useEffect} from 'react';
 export interface AddCollectionProps {
     visibleAddCollection: boolean
     setVisibleAddCollection: React.Dispatch<React.SetStateAction<boolean>>
+    dataCollectionUpdate:any
 
 }
 export interface Collection {
@@ -16,19 +17,28 @@ export interface Collection {
     id: string;
 }
 const AddCollection: React.FC<AddCollectionProps> = (props) => {
-    const { visibleAddCollection, setVisibleAddCollection } = props
+    const { visibleAddCollection, setVisibleAddCollection, dataCollectionUpdate } = props
     const categoryName = useSelector((state: RootState) => {
         return state?.categoryReducer?.categoryName
     });
     const dispatch = useDispatch()
     const [name, setName] = React.useState('');
     const [description, setDescription] = React.useState('')
+    const [initialCategoryName, setInitialCategoryName] = React.useState('')
     const containerStyle = { backgroundColor: 'white', margin: 20 };
-    
+    useEffect(()=>{
+            setName(dataCollectionUpdate.name)
+            setDescription(dataCollectionUpdate.description)
+            setInitialCategoryName(dataCollectionUpdate.categoryName)
+    },[dataCollectionUpdate.isUpdate])
     const addCollectionHandle = async () => {
         try {
             if (name) {
-                const doc = addDoc(collection(FIREBASE_DB, 'collections'), { name, description, categoryName: categoryName || "nothing" })
+                if(dataCollectionUpdate.isUpdate && dataCollectionUpdate.id){
+                    updateDoc(doc(FIREBASE_DB, "collections", dataCollectionUpdate.id),{name, description, categoryName: categoryName || "nothing"})
+                }else{
+                    const doc = addDoc(collection(FIREBASE_DB, 'collections'), { name, description, categoryName: categoryName || "nothing" })
+                }
                 setVisibleAddCollection(false)
             }
         } catch (err: any) {
@@ -58,7 +68,7 @@ const AddCollection: React.FC<AddCollectionProps> = (props) => {
                             <TextInput style={{ marginVertical: 5 }} label="Mô tả (Không bắt buộc)" value={description} onChangeText={(text: string) => setDescription(text)} mode='outlined' />
                             <TouchableOpacity onPress={() => dispatch(openModalCategory())}>
 
-                                <TextInput style={{ marginVertical: 5 }} editable={false} outlineColor="rgba(0,0,0,0)" label="Danh mục" value={categoryName || "Không có danh mục"} mode='outlined' />
+                                <TextInput style={{ marginVertical: 5 }} editable={false} outlineColor="rgba(0,0,0,0)" label="Danh mục" value={categoryName || initialCategoryName  || "Không có danh mục"} mode='outlined' />
                             </TouchableOpacity>
                             <View style={{ justifyContent: 'center', alignItems: 'center', marginBottom: 10 }}>
                                 <Button mode="contained" onPress={addCollectionHandle}> Thêm bộ
