@@ -4,7 +4,8 @@ export const categorySlice = createSlice({
   name: 'category',
   initialState: {
     isCategoryModalOpen: false,
-    categoryName:''
+    categoryName:'',
+    categoryColor:''
   },
   reducers: {
     openModalCategory: (state) => {
@@ -14,12 +15,13 @@ export const categorySlice = createSlice({
     closeModalCategory: (state) => {
       state.isCategoryModalOpen = false
     },
-    setCategoryName: (state, action) => {
-      state.categoryName = action.payload
+    setCategory: (state, action) => {
+      state.categoryName = action.payload.name
+      state.categoryColor = action.payload.color
     }
   },
 })
 
-export const { openModalCategory, closeModalCategory, setCategoryName } = categorySlice.actions
+export const { openModalCategory, closeModalCategory, setCategory } = categorySlice.actions
 
 export default categorySlice.reducer

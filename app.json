@@ -21,7 +21,8 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "package": "com.ngochuyen041212.todoApp"
     },
     "web": {
       "favicon": "./assets/favicon.png"

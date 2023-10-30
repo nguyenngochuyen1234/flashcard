@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text } from 'react-native';
 import { Dialog, Portal, Button } from 'react-native-paper';
 import { deleteDoc, doc } from 'firebase/firestore'
@@ -22,15 +22,21 @@ const DialogDelete: React.FC<DialogDeleteProps> = (props) => {
         openDialogDelete,
         setOpenDialogDelete
     } = props
-
-  const showDialog = () => setOpenDialogDelete(true);
+    const [idDelete, setIdDelete] = useState(id||'')
+    const [isLoading, setIsLoading] = useState(false)
+    useEffect(()=>{
+      setIdDelete(id)
+    },[id])
   const hideDialog = () => setOpenDialogDelete(false);
   const deleteItem = async () => {
+    setIsLoading(true)
     try{
-      await deleteDoc(doc(FIREBASE_DB, collection,id))
-      hideDialog()
+      await deleteDoc(doc(FIREBASE_DB, collection,idDelete))
     }catch(err){
       console.log(err)
+    }finally{
+      setIsLoading(false)
+      setOpenDialogDelete(false)
     }
   }
   return (
@@ -42,8 +48,8 @@ const DialogDelete: React.FC<DialogDeleteProps> = (props) => {
             <Text>{content}</Text>
           </Dialog.Content>
           <Dialog.Actions>
-          <Button onPress={hideDialog}>Cancel</Button>
-          <Button onPress={deleteItem}>Ok</Button>
+          <Button disabled={isLoading} onPress={hideDialog}>Cancel</Button>
+          <Button disabled={isLoading} onPress={deleteItem}>Ok</Button>
           </Dialog.Actions>
         </Dialog>
       </Portal>
